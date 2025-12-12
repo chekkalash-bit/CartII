@@ -1,0 +1,1 @@
+This web map is my final project for my Cartography II class. This is the last class required for my GIS and Cartography certificate. Earning this certificate has been challenging for a GIS ludite, like me, but I feel accomplished for the work created in both of my Cartography classes. 
