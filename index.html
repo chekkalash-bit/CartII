@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+        <title>Visualizing the Intersection of Population Density, Income, and Green Space</title> 
+        
+    <style>
+        html, body {
+           padding: 0;
+           margin: 0;
+           height: 100%;
+           width: 100%;
+           background-color: darkseagreen; 
+            overflow: hidden; 
+            font-family: sans-serif;
+        }
+        
+        #header {
+            width: 100%;
+            background-color: darkseagreen;
+            height: 60px;
+            text-align: center;
+            color: white;
+            padding-top: 5px; 
+            box-sizing: border-box; 
+        }
+        
+        #header h1 {
+            margin: 0; 
+            padding: 0;
+            font-size: 35px; 
+            line-height: 60px;
+        }
+        
+        #legendDiv {
+            float: left;
+            width: 20%;
+            height: calc(100% - 60px); 
+            background-color: darkseagreen;
+            color: white;
+            padding: 10px;
+            box-sizing: border-box;
+            border-right: 2px darkseagreen;
+            overflow-y: auto;
+        }
+        
+        #legendDiv h3, #legendDiv h4 {
+            color: white !important;
+        }
+        
+        
+        #centerWrapper {
+            float: left;
+            width: 45%; 
+            height: calc(100% - 60px);
+            border-right: 2px darkseagreen;
+            box-sizing: border-box;
+        }
+        
+        
+        #rightColumn {
+            float: right;
+            right: 0;
+            width: 35%;
+            height: 90%;
+        }
+        
+       
+    
+        
+        .titleDiv {
+            float: left;
+            height: 5%;
+            width: 100%;
+            background-color: #abd7ab;
+            color: white;
+            text-align: center;
+            padding-right: 0.5%;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 25px;
+            box-sizing: border-box;
+            border-left: 8px solid darkseagreen;
+           }
+        
+        #viewDivMain { 
+            width: 100%; 
+            height: calc(100% - 30px); 
+            padding: 0; margin: 0;
+        }
+        
+        #viewDivTop {
+            width: 100%;
+            height: 45%; 
+            border-left: 8px solid darkseagreen;
+        }
+        #viewDivBottom {
+            width: 100%;
+            height: 45%; 
+            border-left: 8px solid darkseagreen;
+         }
+         
+
+        
+        </style>
+        <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css">
+        <script src="https://js.arcgis.com/4.34/"></script>
+    <script>
+        require([ 
+        "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/FeatureLayer" ,
+             "esri/widgets/Search",
+            "esri/widgets/Legend",
+            "esri/widgets/LayerList"
+        ], function(Map, MapView, FeatureLayer, Search, Legend, LayerList) {
+        
+            //Main map  = parks
+            var mapMain = new Map({ basemap: "gray-vector" });
+            
+            var viewMain = new MapView({
+                container: "viewDivMain",
+                map: mapMain,
+                center: [-98, 38],
+                zoom: 3
+            }); 
+            
+            var parkPopup = {
+                title: "{Park_Name}",
+                content: [
+                    {
+                        type: "fields",
+                        fieldInfos: [
+                            { 
+                                fieldName: "park_size_acres", 
+                                label: "Total Acreage", 
+                                format: { 
+                                    places: 0, 
+                                    digitSeparator: true 
+                                } 
+                            }
+                        ]
+                    }
+                ]
+            };
+                                
+            var tplOfficialLayer = new FeatureLayer({
+                url: "https://server7.tplgis.org/arcgis7/rest/services/ParkServe/ParkServe_ProdNew/MapServer/2",
+                title: "Official ParkServe Data", 
+                opacity: 1,
+                outFields: ["*"],
+                popupTemplate: parkPopup,
+                
+                renderer: {
+                type: "simple",  
+                        symbol: {
+                            type: "simple-fill",
+                            color: [51, 163, 94, 0.6], 
+                            outline: {
+                            color: [51, 163, 94, 0.5],
+                            width: 0.5
+            }
+        },
+        label: "Park Boundaries" 
+    }
+            });
+            mapMain.add(tplOfficialLayer);
+            
+            var legend1 = new Legend({
+                view: viewMain
+            });
+            
+            //top map is population density
+            var mapTop = new Map({ basemap: "gray-vector" });
+            
+            var viewTop = new MapView({
+                container: "viewDivTop", 
+                map: mapTop,
+                center: [-98, 38],
+                zoom: 3,
+                ui: { components: [] } 
+            });
+            
+            var popPopup = {
+               title: "Population Density",
+                content: [
+                    {
+                    type: "fields",
+                    fieldInfos: [{ 
+                        fieldName: "Pop_densit", 
+                        label: "Density (Pop/sq mi)", 
+                        format: { 
+                        places: 0, 
+                        digitSeparator: true 
+                        } 
+                    }
+                    ]
+                }
+            ]
+            };
+            
+            var densityLayer = new FeatureLayer({
+                portalItem: { id: "059f023aa56f44008ad0178695c776bb"},  
+                title: "Population Density",
+                popupTemplate: popPopup,
+                opacity: 1
+            });
+            mapTop.add(densityLayer);
+            
+             var legend2 = new Legend({
+                view: viewTop
+            });
+
+            
+          //bottom map is income
+            var mapBottom = new Map({ basemap: "gray-vector" }); 
+            
+            var viewBottom = new MapView({
+                container: "viewDivBottom", 
+                map: mapBottom,
+                center: [-98, 38],
+                zoom: 3,
+                ui: { components: [] } 
+            });
+            
+            var incomePopup = {
+                title: "Median Household Income",
+                content: "<b> Median Household Income: </b> ${ASQPE001}"  
+                    };
+            
+           
+                var incomeLayer = new FeatureLayer({
+                portalItem: { id: "8d026551a487479b9cfe73490c18957c"}, 
+                title: "Median Income Map",
+                popupTemplate: incomePopup,
+                opacity: 1                
+            });
+            mapBottom.add(incomeLayer);
+            
+            var legend3 = new Legend({
+                view: viewBottom
+            });
+            
+          var searchWidget = new Search({
+                view: viewMain,
+                container: "search-container" 
+            });
+        
+            const defineActions = function(event) {
+                const item = event.item;
+                if (item.layer.type != "group") {
+                    item.panel = {
+                        content: "legend",
+                        open: true
+                    };
+                }
+            };
+
+            const layerLists = [
+                new LayerList({
+                    view: viewMain,
+                    container: "legend-parks", // Mapped to your HTML div
+                    listItemCreatedFunction: defineActions
+                }),
+                new LayerList({
+                    view: viewTop,
+                    container: "legend-density",
+                    listItemCreatedFunction: defineActions
+                }),
+                new LayerList({
+                    view: viewBottom,
+                    container: "legend-income",
+                    listItemCreatedFunction: defineActions
+                })
+            ];
+            
+            const views = [viewMain, viewTop, viewBottom];
+            let active;
+
+            const sync = (source) => {
+                if (!active || !active.viewpoint || active !== source) { return; }
+                for (const view of views) {
+                    if (view !== active) {
+                        view.viewpoint = active.viewpoint;
+                    }
+                }
+            };
+
+            for (const view of views) {
+                view.watch(["interacting", "animation"], () => {
+                    active = view;
+                    sync(active);
+                });
+                view.watch("viewpoint", () => sync(view));
+            }
+            
+        });
+        </script> 
+    </head>
+    
+    
+    <body>
+    <div id="header">
+
+        <h1>Visualizing the Intersection of Population Density, Income, and Green Space</h1>
+    </div>
+        
+    <div id="legendDiv">
+        <div id="search-container"></div>
+        
+        <h3>Legend</h3>
+        <h4>Park Inventory Legend</h4>
+        <div id="legend-parks"></div> <h4>Population Density</h4>
+        <div id="legend-density"></div> <h4>Median Income</h4>
+        <div id="legend-income"></div> </div>
+       <div id="centerWrapper">
+        <div class="titleDiv">Park Inventory</div>
+        <div id="viewDivMain"></div>
+    </div>
+
+    <div id="rightColumn">
+        
+        <div class="titleDiv">Population Density</div>
+        <div id="viewDivTop"></div>
+        
+        <div class="titleDiv">Median Income</div>
+        <div id="viewDivBottom"></div>
+        
+    </div>
+
+    </body>
+        
+</html>
